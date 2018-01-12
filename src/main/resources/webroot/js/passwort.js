@@ -35,24 +35,41 @@ $(document).ready(function () {
                 .append(" <br>" + "neuer Benutzername: <input type='text' id='benutzername'/><br>\n")
                 .append("gewünschtes Passwort: <input type='password' id='neuespasswort'/><br>\n")
                 .append("Passwort wiederholen: <input type='password' id='passwortbestätigen'/><br>\n")
-                .append("<input type='checkbox' name='checkknopf' id='Überprüfungsknopf'/>"+"Ich akzeptiere die AGB"+ " <br>"+ " <br>")
+                //.append("<input type='checkbox' name='checkknopf' id='Überprüfungsknopf'/>"+"Ich akzeptiere die AGB"+ " <br>"+ " <br>")
                 .append("<input type='button' value='Benutzer erstellen' id='neueruserknopf'/>");
     });
 
-    $(document).on("click", "#neueruserknopf", function () {
-
+    $(document).on("click", "#neueruserknopf", function () { // verbessert Jan Benecke
+    
         if ($("#neuespasswort").val() == $("#passwortbestätigen").val()) {
-        
-            $("body").html("Benutzer erstellt: " + $("#benutzername").val() + " Passwort: " + $("#neuespasswort").val() + " <br>")
-                    .append("Einloggen<br>\nName: <input type='text' id='Anmeldename'/><br>")
-                    .append("Passwort: <input type='password' id='passwort'/><br>\n")
-                    .append("<input type='button' value='OK' id='Anmeldeknopf'/>\n");
-                    
             
-        } else {
-            $("body").append("<br>Passwort bitte überprüfen");
-        }   
-});
+          
+             $.post("../anfrage", {
+                typ: "registrierung",
+                regname: $("#benutzername").val(),
+                passwort: $("#neuespasswort").val()
+           
+     
+            }, function (data){
+                if (data.typ=="bestätigung") {
+                    if (data.text=="richtig") {
+                         $("body").append("Ihr Account wurde erstellt")        
+                    }
+                    else if (data.text=="falsch"){
+                        $("body").append("Dieser Benutzer existiert schon")  
+                    }
+               
+            }
+                
+            }
+                    );
+          
+        }
+        else {
+            $("body").append("<br>Die Passwörter stimmen nicht überein! Bitte nochmal versuchen");
+        }
+    });
+
 
     $.post("../anfrage",
             {
@@ -76,8 +93,8 @@ $(document).ready(function () {
             }
     );
 
-$(document).on("click", "#Passwortvergessenknopf", function () {
-    $("body").html("Leider können wir ihr Passwort nicht wiederherstellen, weshalb sie sich erneut anmelden müssen.")
-            .append("<br><input type='image' src='https://t4.ftcdn.net/jpg/01/69/35/23/240_F_169352390_BIqHe9sWR33ULPNkIuPdyqWM4lMuxC8z.jpg'/>");
-});
+//$(document).on("click", "#Passwortvergessenknopf", function () {
+  //  $("body").html("Leider können wir ihr Passwort nicht wiederherstellen, weshalb sie sich erneut anmelden müssen.")
+    //        .append("<br><input type='image' src='https://t4.ftcdn.net/jpg/01/69/35/23/240_F_169352390_BIqHe9sWR33ULPNkIuPdyqWM4lMuxC8z.jpg'/>");
+//});
 });

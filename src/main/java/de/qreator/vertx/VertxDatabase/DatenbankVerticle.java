@@ -16,6 +16,7 @@ public class DatenbankVerticle extends AbstractVerticle {
     private static final String SQL_NEUE_TABELLE = "create table if not exists user(id int auto_increment,name varchar(20) not null, passwort varchar(20) not null,primary key(name))";
     private static final String SQL_ÜBERPRÜFE_PASSWORT = "select passwort from user where name=?";
     private static final String SQL_ÜBERPRÜFE_EXISTENZ_USER = "select name from user where name=?";
+    private static final String SQL_DELETE =                "Drop table user"; // Jan Benecke
 
     private static final String EB_ADRESSE = "vertxdatabase.eventbus";
 
@@ -34,10 +35,10 @@ public class DatenbankVerticle extends AbstractVerticle {
         JsonObject config = new JsonObject()
                 .put("url", "jdbc:h2:~/datenbank")
                 .put("driver_class", "org.h2.Driver");
-
+        //löscheDatenbank(); // Jan Benecke nur einsetzen wenn ihr etwas an der Datenbank ändert (damit ist kein Eintrag gemeint sondern z.B. eine neue Spalte hinzufügt
         dbClient = JDBCClient.createShared(vertx, config);
 
-        Future<Void> datenbankFuture = erstelleDatenbank().compose(db -> erstelleUser("user", "geheim"));
+        Future<Void> datenbankFuture = erstelleDatenbank();//.compose(db -> erstelleUser("user", "geheim"));
         
         datenbankFuture.setHandler(db -> {
             if (db.succeeded()) {
@@ -50,7 +51,24 @@ public class DatenbankVerticle extends AbstractVerticle {
             }
         });
     }
+    private void löscheDatenbank() {
 
+        dbClient.getConnection(res -> {
+            if (res.succeeded()) {
+                SQLConnection connection = res.result();
+                connection.execute(SQL_DELETE, löschen -> {
+                    if (löschen.succeeded()) {
+                        LOGGER.info("Datenbank erfolgreich gelöscht");
+
+                    } else {
+                        LOGGER.error("Löschen der Datenbank fehlgeschlagen " + löschen.cause());
+
+                    }
+                });
+            }
+
+        });
+    }
     public void onMessage(Message<JsonObject> message) {
 
         if (!message.headers().contains("action")) {
@@ -65,12 +83,35 @@ public class DatenbankVerticle extends AbstractVerticle {
             case "ueberpruefe-passwort":
                 überprüfeUser(message);
                 break;
+            case "erstelleUser": // Jan Benecke
+                erstelleNeuenUser(message);
+                break;
 
             default:
                 message.fail(ErrorCodes.SCHLECHTE_AKTION.ordinal(), "Schlechte Aktion: " + action);
         }
     }
+private void erstelleNeuenUser(Message<JsonObject> message){ // Jan Benecke
+            String name = message.body().getString("name");
+        String passwort = message.body().getString("passwort");
+    
+ 
+        Future<Void> userErstelltFuture = erstelleUser(name, passwort);
+        userErstelltFuture.setHandler(reply -> {
+            if (reply.succeeded()) {
+                LOGGER.info("REG: reply (positive) sent");
+                message.reply(new JsonObject().put("REGsuccess", Boolean.TRUE));
+            } else {
+                String grund = reply.cause().toString();
+                LOGGER.info(grund);
+                if (grund.equals("user existiert")) {
+                    LOGGER.info("REG: reply (negative) sent");
+                    message.reply(new JsonObject().put("REGsuccess", Boolean.FALSE));
+                }
+            }
 
+        });
+}
     private Future<Void> erstelleDatenbank() {
         Future<Void> erstellenFuture = Future.future();
         LOGGER.info("Datenbank neu anlegen, falls nicht vorhanden.");
@@ -118,7 +159,7 @@ LOGGER.info("Benutzer erfolgreich erstellt");
                         } else {
                             LOGGER.info("User mit dem Namen " + name + " existiert bereits.");
                             //erstellenFuture.fail("User existiert bereits!"); 
-                            erstellenFuture.complete();
+                            erstellenFuture.fail("user existiert"); // Jan Benecke
                         }
                     } else {
                         erstellenFuture.fail(abfrage.cause());
