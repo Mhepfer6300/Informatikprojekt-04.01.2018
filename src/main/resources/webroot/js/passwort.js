@@ -34,7 +34,8 @@ $(document).ready(function () {
      $(document).on("click", "#Homebutton", function () {
         $("body").html("MK - Das Sportmagazin!<br><br>")
                  .append("Fußball Bundesliga Saison 2017/2018: <br><br>\n")
-                 .append("Die Tabelle des 33.Spieltags:<br>\n")
+                 .append("<br><input type='image' src='http://worldsoccertalk.com/wp-content/uploads/2015/07/bundesliga.jpg'/>")
+                 .append("<br>Die Tabelle des 33.Spieltags:<br>\n")
                  .append("<input type='button' value='Tabelle' id='TabellenButton'<br><br>\n")
                  .append("Wer ist der Toptorjäger und wer sind seine Verfolger?!:<br>\n")
                  .append("<input type='button' value='Top-Torschützen' id='Torschützenbutton'<br><br>\n")
